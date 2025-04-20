@@ -9,9 +9,9 @@ import { setupSocket } from './config/socket'
 import { connectDB } from "./config/db";
 import stkRoutes from './routes/stk.routes'
 import authRoutes from './routes/auth.routes'
-
+import businessRoutes from './routes/business,routes'
 import MessagesRoute from './routes/message.route'
-
+import VendorRoute from './routes/vendor.routes'
 import SmsRoute from './routes/sms.route'
 import { authenticateToken } from "./middleware/auth.middleware";
 import bodyParser from "body-parser";
@@ -43,8 +43,10 @@ const io: any = new Server(httpServer, {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/stk", stkRoutes);
+app.use("/api/business", authenticateToken, businessRoutes);
 app.use("/api/messages", authenticateToken, MessagesRoute);
 app.use("/api/sms", SmsRoute);
+app.use("/api/vendor",authenticateToken, VendorRoute);
 app.get("/api/authenticated", authenticateToken, async (req: any, res) => {
   let authuser = await User.findById(req.user.userId)
   res.json(authuser);

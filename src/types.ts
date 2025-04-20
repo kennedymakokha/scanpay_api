@@ -31,10 +31,24 @@ export interface ISms extends Document {
 
 }
 
-export type Category = {
-    category_name: string;
+export type Business = {
+    business_name: string;
     description: string;
     state: "active" | "inactive";
     deletedAt?: string;
     createdBy: Types.ObjectId;
+};
+export type User = {
+    phone_number: string;
+    password: string;
+    username: string;
+    vendorName?: string;
+    fullname?: string
+    role: "active" | "inactive";
+    deletedAt?: string;
+    ID_No: string
+    business?: Types.ObjectId | any;
+    createdBy?: Types.ObjectId;
+    bussines?: Types.ObjectId;
+    confirm_password?: string
 };

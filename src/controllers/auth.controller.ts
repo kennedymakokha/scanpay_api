@@ -180,7 +180,7 @@ export const login = async (req: Request, res: Response) => {
                 { phone_number: phone }
             ]
         }).select("phone_number username role activated password");
-        console.log(userExists)
+
         if (!userExists) {
             res.status(400).json("User Not Found")
             return
@@ -204,7 +204,7 @@ export const login = async (req: Request, res: Response) => {
                 path: "/",
                 maxAge: 3600, // 1 hour
             }));
-          
+
             res.status(200).json({ ok: true, message: "Logged in", token: accessToken, exp: decoded?.exp, user: userExists });
             return
         }
@@ -215,6 +215,8 @@ export const login = async (req: Request, res: Response) => {
 
 
 };
+
+// Admin Login
 
 // session check
 export const session_Check = async (req: Request, res: Response) => {
@@ -392,3 +394,42 @@ export const get_Admins = async (req: Request | any, res: Response | any) => {
     }
 }
 
+
+// Vendos
+
+export const CreateVendor = async (req: Request | any, res: Response) => {
+    try {
+        const { username, password, phone_number } = req.body;
+        let newID = ` ${Date()}-${MakeActivationCode(4)}`
+
+        req.body.username = "Admin"
+        let phone = await Format_phone_number(phone_number); //format the phone number
+        const userExists: any = await Admin.findOne(
+            {
+                $or: [
+
+                    { phone_number: phone }
+                ],
+
+            }
+        );
+
+        if (userExists) {
+            res.status(400).json("User already exists")
+            return
+        }
+        req.body.phone_number = phone
+        req.body.createdBy = req.user.userId
+        const user: any = new Admin(req.body);
+        const newAdmin = await user.save();
+
+        res.status(201).json({ message: "admin added  successfully", newAdmin });
+        return;
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Server error", error });
+        return;
+
+    }
+};

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { get_single_conversation } from "../controllers/message.controller";
-import { Create, Get, Get_one, Trash, Update } from "../controllers/category.controller";
+import { Create, Get, Get_one, Trash, Update } from "../controllers/business.controller";
 
 
 const router = Router();
