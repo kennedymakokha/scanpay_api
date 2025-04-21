@@ -32,7 +32,8 @@ interface MpesaStkResponse {
 export const Mpesa_stk = async (
     No: string,
     amount: number,
-    user?: string
+    user?: string,
+    to?: any
 ): Promise<MpesaStkResponse> => {
     const consumer_key = process.env.MPESA_CONSUMER_KEY as string;
     const consumer_secret = process.env.MPESA_CONSUMER_SECRETE as string;
@@ -89,7 +90,7 @@ export const Mpesa_stk = async (
     );
 
     const data: any = await fetch_response.json();
-    
+
     await new MpesaLogs({
         MerchantRequestID: data.MerchantRequestID,
         CheckoutRequestID: data.CheckoutRequestID,
@@ -98,6 +99,7 @@ export const Mpesa_stk = async (
         ResponseCode: data.ResponseCode,
         user: user,
         log: "",
+        vendor: to
     }).save()
     return {
         MerchantRequestID: data.MerchantRequestID,

@@ -12,8 +12,9 @@ import { validateVendorInput } from "../validations/user.validation";
 
 export const register = async (req: Request, res: Response) => {
     try {
-        CustomError(validateVendorInput, req.body, res)
-        const { username, password, phone_number } = req.body;
+        const validationResult = CustomError(validateVendorInput, req.body, res);
+        if (validationResult === false) return;
+        const { username, password, phone_number, ID_No } = req.body;
         let phone = await Format_phone_number(phone_number);
         req.body.location = {
             lat: req.body.lat,
@@ -22,30 +23,31 @@ export const register = async (req: Request, res: Response) => {
         const userExists: any = await User.findOne(
             {
                 $or: [
-                    { username: phone_number },
+                    { ID_No },
                     { phone_number: phone }
                 ],
-
             }
         );
-
         if (userExists) {
             res.status(400).json("User already exists")
             return
         }
         let activationcode = MakeActivationCode(4)
+        req.body.agent = `${phone}${activationcode}`
         req.body.role = "admin"
         req.body.phone_number = phone
+        req.body.password = phone
         req.body.activationCode = activationcode
         const user: any = new User(req.body);
         const newUser = await user.save();
 
-        await sendTextMessage(
-            `Hi ${newUser.vendorName} \nWelcome to Scan pay\nYour your activation Code is ${activationcode}`,
-            `${phone}`,
-            newUser._id,
-            "account-activation"
-        )
+        // await sendTextMessage(
+        //     `Hi ${newUser.vendorName} \nWelcome to Scan pay\nYour your activation Code is ${activationcode}`,
+        //     `${phone}`,
+        //     newUser._id,
+        //     "account-activation"
+        // )
+        console.log("first")
         res.status(201).json({ ok: true, message: "User registered successfully", newUser });
         return;
 

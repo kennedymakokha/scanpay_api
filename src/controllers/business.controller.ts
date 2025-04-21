@@ -9,7 +9,7 @@ import { BusinessModel } from "../models/business.model";
 
 export const Create = async (req: Request | any, res: Response) => {
     try {
-        
+
         CustomError(validateBusinessInput, req.body, res)
         const Exists: any = await BusinessModel.findOne({ Business_name: req.body.business_name });
         if (Exists) {
@@ -30,6 +30,7 @@ export const Create = async (req: Request | any, res: Response) => {
 };
 export const Get = async (req: Request | any, res: Response | any) => {
     try {
+        console.log("first")
         const { page = 1, limit = 10, sendId } = req.query;
         const businessess: any = await BusinessModel.find({ deletedAt: null }).skip((page - 1) * limit)
             .limit(parseInt(limit))

@@ -4,6 +4,7 @@ import Mpesa_stk from "../utils/stk.util";
 import { getSocketIo } from "../config/socket";
 import MpesaLogs from "../models/mpesa_logs.model";
 import { toLocalPhoneNumber } from "../utils/simplefunctions.util";
+import { CashModel } from "../models/cash.model";
 let io = getSocketIo()
 
 
@@ -14,6 +15,7 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             MerchantRequestID: req.body.Body?.stkCallback?.MerchantRequestID
         })
 
+        // let updates: any = await User.findOneAndUpdate({ _id: agent._id }, req.body, { new: true, useFindAndModify: false })
 
         for (let i = 0; i < Logs.length; i++) {
 
@@ -27,7 +29,17 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             }, { new: true, useFindAndModify: false })
 
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-
+                const agent: any = await CashModel.findOne({ user: req.logs.vendor })
+                let current = agent.Amount
+                let newAmount = parseInt(current) + parseInt(Logs.amount)
+                if (agent) {
+                    await CashModel.findOneAndUpdate({ user: req.logs.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
+                    return
+                } else {
+                    const newbusiness: any = new CashModel({ user: agent._id, amount: Logs.amount });
+                    await newbusiness.save();
+                    return
+                }
 
             }
         }
@@ -43,6 +55,8 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
     try {
         const { amount, phone_number } = req.body;
         const user: any = await User.findById(req.user.userId)
+        const agent: any = await User.findOne({ agent: req.body.to })
+
         let number
         if (phone_number) {
             number = phone_number
@@ -51,7 +65,7 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             const user = await User.findById(req.user.userId)
             number = user?.phone_number
         }
-        const response = await Mpesa_stk(number, Number(amount), user._id);
+        const response = await Mpesa_stk(number, Number(amount), user._id, agent._id);
         const merchantRequestId = response.MerchantRequestID;
 
         let logs = await MpesaLogs.findOne({ MerchantRequestID: merchantRequestId });
@@ -67,16 +81,21 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
         }
 
         if (!logs || logs.log === '') {
-            return res.status(500).json({ message: "Payment not verified. Please try again later." });
+            res.status(500).json({ message: "Payment not verified. Please try again later." });
+            return
         }
 
         if (logs.ResponseCode !== 0) {
-            return res.status(400).json({ message: logs.ResultDesc });
+            res.status(400).json({ message: logs.ResultDesc });
+            return
+        } else {
+
+            res.status(200).json({ message: "Deposit successful" });
+            return
         }
 
 
 
-        return res.status(200).json({ message: "Deposit successful" });
 
 
     } catch (error: any) {

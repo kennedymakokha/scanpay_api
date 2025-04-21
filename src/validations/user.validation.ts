@@ -54,18 +54,18 @@ export const validateVendorInput = (data: User) => {
     if (Validator.isEmpty(data.fullname)) {
         errors.fullname = 'Vendor name  field is required';
     }
-    if (Validator.isEmpty(data.password)) {
-        errors.password = 'Password field is required';
-    }
-    if (!Validator.isLength(data.password, { min: 8, max: 30 })) {
-        errors.password = 'Password must be more than 8 characters long';
-    }
-    if (!NumericalExists(data.password)) {
-        errors.password = 'Password Must have at least one Numerical value';
-    }
-    if (!isSpecial(data.password)) {
-        errors.password = 'Password Must contain at least one special characters  ';
-    }
+    // if (Validator.isEmpty(data.password)) {
+    //     errors.password = 'Password field is required';
+    // }
+    // if (!Validator.isLength(data.password, { min: 8, max: 30 })) {
+    //     errors.password = 'Password must be more than 8 characters long';
+    // }
+    // if (!NumericalExists(data.password)) {
+    //     errors.password = 'Password Must have at least one Numerical value';
+    // }
+    // if (!isSpecial(data.password)) {
+    //     errors.password = 'Password Must contain at least one special characters  ';
+    // }
 
     if (!Validator.isLength(data.phone_number, { min: 10, max: 14 })) {
         errors.phone = 'phone Number  must have at least  10 characters ';

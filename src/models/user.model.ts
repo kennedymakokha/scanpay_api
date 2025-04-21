@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 const UserSchema = new mongoose.Schema({
   phone_number: { type: String, required: true, unique: true },
   username: { type: String, },
+  agent: { type: String, },
   activationCode: { type: String, },
   role: {
     type: String,

@@ -38,6 +38,7 @@ export const register = async (req: Request, res: Response) => {
 
         let activationcode = MakeActivationCode(4)
         req.body.phone_number = phone
+     
         req.body.activationCode = activationcode
         const user: any = new User(req.body);
         const newUser = await user.save();
@@ -167,6 +168,7 @@ export const requestToken = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
 
     try {
+
         if (req.method !== "POST") {
             res.status(405).json("Method Not Allowed")
             return
@@ -196,7 +198,6 @@ export const login = async (req: Request, res: Response) => {
 
             const { accessToken, refreshToken } = generateTokens(userExists);
             const decoded = jwtDecode(accessToken);
-
             res.setHeader("Set-Cookie", serialize("sessionToken", accessToken, {
                 httpOnly: false,
                 secure: process.env.NODE_ENV === "production", // Enable in production
@@ -204,7 +205,6 @@ export const login = async (req: Request, res: Response) => {
                 path: "/",
                 maxAge: 3600, // 1 hour
             }));
-
             res.status(200).json({ ok: true, message: "Logged in", token: accessToken, exp: decoded?.exp, user: userExists });
             return
         }
@@ -347,7 +347,7 @@ export const admin_login = async (req: Request, res: Response) => {
 export const get_Users = async (req: Request | any, res: Response | any) => {
     try {
         const { page = 1, limit = 10, sendId } = req.query;
-        let users: any = await User.find().select(`-password ${sendId ? "" : "-_id"} -updatedAt -__v`)
+        let users: any = await User.find({ role: "admin" }).select(`-password ${sendId ? "" : "-_id"} -updatedAt -__v`)
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });

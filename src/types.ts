@@ -44,7 +44,7 @@ export type User = {
     username: string;
     vendorName?: string;
     fullname?: string
-    role: "active" | "inactive";
+    role: "admin" | "superAdmin" | "client";
     deletedAt?: string;
     ID_No: string
     business?: Types.ObjectId | any;
