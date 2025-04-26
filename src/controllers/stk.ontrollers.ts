@@ -10,13 +10,10 @@ let io = getSocketIo()
 
 export const mpesa_callback = async (req: Request | any, res: Response | any) => {
     try {
-
+        console.log('starting callback')
         const Logs = await MpesaLogs.find({
             MerchantRequestID: req.body.Body?.stkCallback?.MerchantRequestID
         })
-
-        // let updates: any = await User.findOneAndUpdate({ _id: agent._id }, req.body, { new: true, useFindAndModify: false })
-
         for (let i = 0; i < Logs.length; i++) {
 
             await MpesaLogs.findOneAndUpdate(
@@ -29,7 +26,11 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             }, { new: true, useFindAndModify: false })
 
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
+                console.log("transaction successful")
                 const agent: any = await CashModel.findOne({ user: req.logs.vendor })
+                const user: any = await User.findById(req.user.userId)
+                console.log("agent", agent)
+                console.log("user", user)
                 let current = agent.Amount
                 let newAmount = parseInt(current) + parseInt(Logs.amount)
                 if (agent) {

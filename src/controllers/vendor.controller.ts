@@ -33,7 +33,7 @@ export const register = async (req: Request, res: Response) => {
             return
         }
         let activationcode = MakeActivationCode(4)
-        req.body.agent = `${phone}${activationcode}`
+        req.body.agent = `https://www.marapesa.com/${phone}${activationcode}`
         req.body.role = "admin"
         req.body.phone_number = phone
         req.body.password = phone
