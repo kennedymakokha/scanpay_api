@@ -14,6 +14,7 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
         const Logs = await MpesaLogs.find({
             MerchantRequestID: req.body.Body?.stkCallback?.MerchantRequestID
         })
+
         for (let i = 0; i < Logs.length; i++) {
 
             await MpesaLogs.findOneAndUpdate(
@@ -26,15 +27,13 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             }, { new: true, useFindAndModify: false })
 
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-                console.log("transaction successful")
-                const agent: any = await CashModel.findOne({ user: req.logs.vendor })
-                const user: any = await User.findById(req.user.userId)
-                console.log("agent", agent)
-                console.log("user", user)
+               
+                const agent: any = await CashModel.findOne({ user: Logs.vendor })
+    
                 let current = agent.Amount
                 let newAmount = parseInt(current) + parseInt(Logs.amount)
                 if (agent) {
-                    await CashModel.findOneAndUpdate({ user: req.logs.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
+                    await CashModel.findOneAndUpdate({ user: Logs.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
                     return
                 } else {
                     const newbusiness: any = new CashModel({ user: agent._id, amount: Logs.amount });
@@ -70,7 +69,7 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
         const merchantRequestId = response.MerchantRequestID;
 
         let logs = await MpesaLogs.findOne({ MerchantRequestID: merchantRequestId });
-        const maxRetries = 10;
+        const maxRetries = 20;
         const retryInterval = 5000;
         let retryCount = 0;
 
@@ -85,7 +84,7 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             res.status(500).json({ message: "Payment not verified. Please try again later." });
             return
         }
-
+        console.log(logs)
         if (logs.ResponseCode !== 0) {
             res.status(400).json({ message: logs.ResultDesc });
             return
