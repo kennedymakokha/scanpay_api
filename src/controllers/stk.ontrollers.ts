@@ -28,11 +28,10 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
 
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
                
-                const agent: any = await CashModel.findOne({ user: Logs.vendor })
-    
-                let current = agent.Amount
-                let newAmount = parseInt(current) + parseInt(Logs.amount)
+              const agent: any = await CashModel.findOne({ user: Logs.vendor })
                 if (agent) {
+                    let current = agent.Amount
+                    let newAmount = parseInt(current) + parseInt(Logs.amount)
                     await CashModel.findOneAndUpdate({ user: Logs.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
                     return
                 } else {
