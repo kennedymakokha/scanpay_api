@@ -10,14 +10,13 @@ let io = getSocketIo()
 
 export const mpesa_callback = async (req: Request | any, res: Response | any) => {
     try {
-        console.log(req.body)
         const Logs = await MpesaLogs.find({
             MerchantRequestID: req.body.Body?.stkCallback?.MerchantRequestID
         })
-
+        let updated
         for (let i = 0; i < Logs.length; i++) {
 
-            await MpesaLogs.findOneAndUpdate(
+            updated = await MpesaLogs.findOneAndUpdate(
                 {
                     _id: Logs[i]._id
                 }, {
@@ -27,20 +26,17 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             }, { new: true, useFindAndModify: false })
 
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-
-                const agent: any = await CashModel.findOne({ user: Logs.vendor })
-
+                const agent: any = await CashModel.findOne({ user: updated.vendor })
                 if (agent) {
-                    let current = agent.Amount
-                    let newAmount = parseInt(current) + parseInt(Logs.amount)
-                    await CashModel.findOneAndUpdate({ user: Logs.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
+                    let current = agent.amount
+                    let newAmount = current + updated.amount
+                    await CashModel.findOneAndUpdate({ user: updated.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
                     return
                 } else {
-                    const newbusiness: any = new CashModel({ user: Logs.vendor, amount: parseInt(Logs.amount) });
+                    const newbusiness: any = new CashModel({ user: updated.vendor, amount: updated.amount });
                     await newbusiness.save();
                     return
                 }
-
             }
         }
     } catch (error) {
@@ -67,12 +63,10 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
         }
         const response = await Mpesa_stk(number, Number(amount), user._id, agent._id);
         const merchantRequestId = response.MerchantRequestID;
-
         let logs = await MpesaLogs.findOne({ MerchantRequestID: merchantRequestId });
         const maxRetries = 20;
         const retryInterval = 5000;
         let retryCount = 0;
-
         while (logs?.log === '' && retryCount < maxRetries) {
             retryCount++;
             console.log(`Retrying log fetch: attempt ${retryCount}`);
@@ -84,7 +78,7 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             res.status(500).json({ message: "Payment not verified. Please try again later." });
             return
         }
-        console.log(logs)
+
         if (logs.ResponseCode !== 0) {
             res.status(400).json({ message: logs.ResultDesc });
             return
