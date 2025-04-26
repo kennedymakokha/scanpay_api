@@ -26,7 +26,7 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             }, { new: true, useFindAndModify: false })
             const agent: any = await CashModel.findOne({ user: updated.vendor })
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-               
+
                 if (agent) {
                     let current = agent.amount
                     let newAmount = current + updated.amount
@@ -38,8 +38,7 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                     return
                 }
             }
-            let io = getSocketIo()
-            io?.emit("payment-end", false)
+
         }
     } catch (error) {
         console.log(error);
@@ -51,7 +50,7 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
 }
 export const makePayment = async (req: Request | any, res: Response | any) => {
     try {
-       
+
         const { amount, phone_number } = req.body;
         const user: any = await User.findById(req.user.userId)
         const agent: any = await User.findOne({ agent: req.body.to })
@@ -83,15 +82,21 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
 
         if (!logs || logs.log === '') {
             res.status(500).json({ message: "Payment not verified. Please try again later." });
+            let io = getSocketIo()
+            io?.emit("payment-end", false)
             return
         }
 
         if (logs.ResponseCode !== 0) {
             res.status(400).json({ message: logs.ResultDesc });
+            let io = getSocketIo()
+            io?.emit("payment-end", false)
             return
         } else {
 
             res.status(200).json({ message: "Deposit successful" });
+            let io = getSocketIo()
+            io?.emit("payment-end", false)
             return
         }
 
