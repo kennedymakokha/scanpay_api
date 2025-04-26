@@ -22,7 +22,7 @@ import { swaggerSpec, swaggerUi } from "./config/swaggerConfig";
 // dotenv.config();
 const app = express();
 
-app.use(cors({ credentials: true, origin: ["http://localhost:3000", "https://marapesa.com", "https://spingofrontend.vercel.app", "https://api.marapesa.com"] }))
+app.use(cors({ credentials: true, origin: ["*", "http://localhost:3000", "https://marapesa.com", "https://2739-41-139-236-221.ngrok-free.app", "https://api.marapesa.com"] }))
 app.use(cookieParser())
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -34,7 +34,7 @@ connectDB();
 const httpServer = createServer(app);
 const io: any = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "https://spingofrontend.vercel.app", "https://marapesa.com", "http://185.113.249.137:3000", "https://api.marapesa.com"],
+    origin: ["*", "http://localhost:3000", "https://2739-41-139-236-221.ngrok-free.app", "https://marapesa.com", "http://185.113.249.137:3000", "https://api.marapesa.com"],
     methods: ["GET", "POST"],
     credentials: true, // Allow credentials like cookies
     allowedHeaders: "Content-Type,Authorization", // Allow headers
@@ -46,7 +46,7 @@ app.use("/api/stk", stkRoutes);
 app.use("/api/business", authenticateToken, businessRoutes);
 app.use("/api/messages", authenticateToken, MessagesRoute);
 app.use("/api/sms", SmsRoute);
-app.use("/api/vendor",authenticateToken, VendorRoute);
+app.use("/api/vendor", authenticateToken, VendorRoute);
 app.get("/api/authenticated", authenticateToken, async (req: any, res) => {
   let authuser = await User.findById(req.user.userId)
   res.json(authuser);

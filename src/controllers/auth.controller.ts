@@ -12,6 +12,7 @@ import { parse } from "cookie";
 import { jwtDecode } from "jwt-decode";
 import { MakeActivationCode } from "../utils/generate_activation.util";
 import { Admin } from "../models/admin.model";
+import { getSocketIo } from "../config/socket";
 
 
 // User Registration
@@ -38,7 +39,7 @@ export const register = async (req: Request, res: Response) => {
 
         let activationcode = MakeActivationCode(4)
         req.body.phone_number = phone
-     
+
         req.body.activationCode = activationcode
         const user: any = new User(req.body);
         const newUser = await user.save();
@@ -195,7 +196,6 @@ export const login = async (req: Request, res: Response) => {
             res.status(401).json("Invalid credentials");
             return
         } else {
-
             const { accessToken, refreshToken } = generateTokens(userExists);
             const decoded = jwtDecode(accessToken);
             res.setHeader("Set-Cookie", serialize("sessionToken", accessToken, {
@@ -205,6 +205,8 @@ export const login = async (req: Request, res: Response) => {
                 path: "/",
                 maxAge: 3600, // 1 hour
             }));
+
+
             res.status(200).json({ ok: true, message: "Logged in", token: accessToken, exp: decoded?.exp, user: userExists });
             return
         }
@@ -231,6 +233,11 @@ export const session_Check = async (req: Request, res: Response) => {
 
         const user: any = jwt.verify(token, process.env.JWT_SECRET ? process.env.JWT_SECRET : "your_secret_key");
         res.status(200).json(user);
+   
+        let io = getSocketIo()
+
+        io?.to(user.userId).emit("notification", user)
+
         return
     } catch (error) {
         res.status(401).json({ ok: "false", message: "Invalid token" });

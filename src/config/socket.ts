@@ -11,18 +11,14 @@ export const setupSocket = (socketInstance: any) => {
     io = socketInstance;
     io.on("connection", (socket: any) => {
         console.log("SOCKET CONNECTION MADE:", socket.id);
-       
 
-        socket.on('join_topic', (topic: any) => {
-            socket.join(topic);
-            console.log(`User ${socket.id} joined topic: ${topic}`);
 
-            // Optional: Notify others in the room
-            socket.to(topic).emit('user_joined', {
-                message: `User ${socket.id} has joined the topic ${topic}`,
-            });
+        socket.on('join_room', (userId: string) => {
+            socket.join(userId); // Joins a room named after userId
+            console.log(`Socket ${socket.id} joined room: ${userId}`);
         });
-
+       
+       
         socket.on('send_message', ({ topic, message }: any) => {
             io.to(topic).emit('receive_message', {
                 sender: socket.id,
@@ -40,6 +36,6 @@ export const setupSocket = (socketInstance: any) => {
 
 
 
- 
+
 };
 export const getSocketIo = () => io;

@@ -5,7 +5,7 @@ import { getSocketIo } from "../config/socket";
 import MpesaLogs from "../models/mpesa_logs.model";
 import { toLocalPhoneNumber } from "../utils/simplefunctions.util";
 import { CashModel } from "../models/cash.model";
-let io = getSocketIo()
+
 
 
 export const mpesa_callback = async (req: Request | any, res: Response | any) => {
@@ -24,9 +24,9 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 ResponseCode: req.body.Body?.stkCallback?.ResultCode,
                 MpesaReceiptNumber: req.body.Body?.stkCallback?.CallbackMetadata?.Item[1]?.Value
             }, { new: true, useFindAndModify: false })
-
+            const agent: any = await CashModel.findOne({ user: updated.vendor })
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-                const agent: any = await CashModel.findOne({ user: updated.vendor })
+               
                 if (agent) {
                     let current = agent.amount
                     let newAmount = current + updated.amount
@@ -38,6 +38,8 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                     return
                 }
             }
+            let io = getSocketIo()
+            io?.emit("payment-end", false)
         }
     } catch (error) {
         console.log(error);
@@ -49,10 +51,11 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
 }
 export const makePayment = async (req: Request | any, res: Response | any) => {
     try {
+       
         const { amount, phone_number } = req.body;
         const user: any = await User.findById(req.user.userId)
         const agent: any = await User.findOne({ agent: req.body.to })
-
+        console.log("agent", agent)
         let number
         if (phone_number) {
             number = phone_number
@@ -62,8 +65,12 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             number = user?.phone_number
         }
         const response = await Mpesa_stk(number, Number(amount), user._id, agent._id);
+
+
         const merchantRequestId = response.MerchantRequestID;
         let logs = await MpesaLogs.findOne({ MerchantRequestID: merchantRequestId });
+        let io = getSocketIo()
+        io?.emit("payment-start", true)
         const maxRetries = 20;
         const retryInterval = 5000;
         let retryCount = 0;
@@ -104,10 +111,9 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
 
 export const get_Mpesa_logs = async (req: Request | any, res: Response | any) => {
     try {
-        const { page = 1, limit = 10, sendId } = req.query;
-        let user: any = await User.findOne({ _id: req.user.userId })
-        let phone = toLocalPhoneNumber(user.phone_number)
-        let logs = await MpesaLogs.find({ phone_number: phone }).skip((page - 1) * limit)
+        const { page, limit } = req.query;
+
+        let logs = await MpesaLogs.find({ vendor: req.user.userId }).skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
 
