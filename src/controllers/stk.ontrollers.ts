@@ -5,11 +5,13 @@ import { getSocketIo } from "../config/socket";
 import MpesaLogs from "../models/mpesa_logs.model";
 import { toLocalPhoneNumber } from "../utils/simplefunctions.util";
 import { CashModel } from "../models/cash.model";
+import { sendFcmPush } from "../utils/pushnotification.util";
 
 
 
 export const mpesa_callback = async (req: Request | any, res: Response | any) => {
     try {
+        let io = await getSocketIo()
         const Logs = await MpesaLogs.find({
             MerchantRequestID: req.body.Body?.stkCallback?.MerchantRequestID
         })
@@ -25,16 +27,19 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 MpesaReceiptNumber: req.body.Body?.stkCallback?.CallbackMetadata?.Item[1]?.Value
             }, { new: true, useFindAndModify: false })
             const agent: any = await CashModel.findOne({ user: updated.vendor })
+            const user: any = await User.findOne({ _id: updated.vendor })
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
 
                 if (agent) {
                     let current = agent.amount
                     let newAmount = current + updated.amount
                     await CashModel.findOneAndUpdate({ user: updated.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
+                    io?.to(`${user.fcmToken}`).emit("payment-updated", newAmount)
                     return
                 } else {
                     const newbusiness: any = new CashModel({ user: updated.vendor, amount: updated.amount });
                     await newbusiness.save();
+                    io?.to(`${user.fcmToken}`).emit("payment-updated", updated.amount)
                     return
                 }
             }
@@ -51,10 +56,13 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
 export const makePayment = async (req: Request | any, res: Response | any) => {
     try {
 
+        let io = await getSocketIo()
+        
         const { amount, phone_number } = req.body;
         const user: any = await User.findById(req.user.userId)
         const agent: any = await User.findOne({ agent: req.body.to })
-        console.log("agent", agent)
+        // io?.to(`${agent._id}`).emit("payment-updated", 10)
+        // return
         let number
         if (phone_number) {
             number = phone_number
@@ -64,12 +72,9 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             number = user?.phone_number
         }
         const response = await Mpesa_stk(number, Number(amount), user._id, agent._id);
-
-
         const merchantRequestId = response.MerchantRequestID;
         let logs = await MpesaLogs.findOne({ MerchantRequestID: merchantRequestId });
-        let io = getSocketIo()
-        io?.emit("payment-start", true)
+        io?.to(`${agent._id}`).emit("payment-start", true)
         const maxRetries = 20;
         const retryInterval = 5000;
         let retryCount = 0;
@@ -82,21 +87,20 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
 
         if (!logs || logs.log === '') {
             res.status(500).json({ message: "Payment not verified. Please try again later." });
-            let io = getSocketIo()
-            io?.emit("payment-end", false)
+            io?.to(`${agent._id}`).emit("payment-end", false)
             return
         }
 
         if (logs.ResponseCode !== 0) {
             res.status(400).json({ message: logs.ResultDesc });
-            let io = getSocketIo()
-            io?.emit("payment-end", false)
+            io?.to(`${agent._id}`).emit("payment-end", false)
+            sendFcmPush(agent.fcmToken, `${logs.phone_number} Transaction Status!`, `${logs.ResultDesc}`);
             return
         } else {
 
             res.status(200).json({ message: "Deposit successful" });
             let io = getSocketIo()
-            io?.emit("payment-end", false)
+            io?.to(`${agent._id}`).emit("payment-end", false)
             return
         }
 
@@ -128,6 +132,20 @@ export const get_Mpesa_logs = async (req: Request | any, res: Response | any) =>
                 logs, page: parseInt(page),
                 totalPages: Math.ceil(total / limit)
             });
+        return
+    } catch (error) {
+        console.log(error);
+        res
+            .status(400)
+            .json({ success: false, message: "operation failed ", error });
+        return
+    }
+}
+export const get_wallet_balance = async (req: Request | any, res: Response | any) => {
+    try {
+        let Cash = await CashModel.findOne({ user: req.user.userId })
+        res.status(200)
+            .json(Cash);
         return
     } catch (error) {
         console.log(error);
