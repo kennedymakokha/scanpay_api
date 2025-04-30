@@ -34,12 +34,12 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                     let current = agent.amount
                     let newAmount = current + updated.amount
                     await CashModel.findOneAndUpdate({ user: updated.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
-                    io?.to(`${user.fcmToken}`).emit("payment-updated", newAmount)
+                    io?.to(`${user._id}`).emit("payment-updated", newAmount)
                     return
                 } else {
                     const newbusiness: any = new CashModel({ user: updated.vendor, amount: updated.amount });
                     await newbusiness.save();
-                    io?.to(`${user.fcmToken}`).emit("payment-updated", updated.amount)
+                    io?.to(`${user._id}`).emit("payment-updated", updated.amount)
                     return
                 }
             }
