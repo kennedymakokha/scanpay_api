@@ -1,9 +1,4 @@
 
-import { Socket } from "socket.io";
-import { MakeActivationCode } from "../utils/generate_activation.util";
-import { ChatMessage } from "../types";
-import Message from "../models/messages.model";
-import { encryptMessage } from "../utils/encrypt.util";
 
 let io: any = null;
 let users: { [key: string]: string } = {};
