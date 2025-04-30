@@ -57,11 +57,12 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
     try {
 
         let io = await getSocketIo()
-        
+
         const { amount, phone_number } = req.body;
         const user: any = await User.findById(req.user.userId)
         const agent: any = await User.findOne({ agent: req.body.to })
-        // io?.to(`${agent._id}`).emit("payment-updated", 10)
+        // console.log(agent)
+        // res.status(500).json({ message: "Payment not verified. Please try again later." });
         // return
         let number
         if (phone_number) {
@@ -94,7 +95,7 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
         if (logs.ResponseCode !== 0) {
             res.status(400).json({ message: logs.ResultDesc });
             io?.to(`${agent._id}`).emit("payment-end", false)
-            sendFcmPush(agent.fcmToken, `${logs.phone_number} Transaction Status!`, `${logs.ResultDesc}`);
+            sendFcmPush(`${agent?.fcmToken}`, `${logs.phone_number} Transaction Status!`, `${logs.ResultDesc}`);
             return
         } else {
 
@@ -103,10 +104,6 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
             io?.to(`${agent._id}`).emit("payment-end", false)
             return
         }
-
-
-
-
 
     } catch (error: any) {
         console.error("Wallet operation error:", error);
@@ -125,7 +122,6 @@ export const get_Mpesa_logs = async (req: Request | any, res: Response | any) =>
         let logs = await MpesaLogs.find({ vendor: req.user.userId }).skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
-
         const total = await MpesaLogs.countDocuments();
         res.status(200)
             .json({
@@ -143,7 +139,7 @@ export const get_Mpesa_logs = async (req: Request | any, res: Response | any) =>
 }
 export const get_wallet_balance = async (req: Request | any, res: Response | any) => {
     try {
-        let Cash = await CashModel.findOne({ user: req.user.userId })
+        let Cash = await CashModel.findOne({ user: req.user.userId }).select("amount")
         res.status(200)
             .json(Cash);
         return
