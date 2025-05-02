@@ -26,22 +26,17 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 ResponseCode: req.body.Body?.stkCallback?.ResultCode,
                 MpesaReceiptNumber: req.body.Body?.stkCallback?.CallbackMetadata?.Item[1]?.Value
             }, { new: true, useFindAndModify: false })
-            const agent: any = await CashModel.findOne({ user: updated.vendor })
-            const user: any = await User.findOne({ _id: updated.vendor })
+            const vendor: any = await User.findOne({ _id: updated.vendor })
+            const user: any = await User.findOne({ _id: updated.User })
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-
-                if (agent) {
-                    let current = agent.amount
-                    let newAmount = current + updated.amount
-                    await CashModel.findOneAndUpdate({ user: updated.vendor }, { amount: newAmount }, { new: true, useFindAndModify: false })
-                    io?.to(`${user._id}`).emit("payment-updated", newAmount)
-                    return
-                } else {
-                    const newbusiness: any = new CashModel({ user: updated.vendor, amount: updated.amount });
-                    await newbusiness.save();
-                    io?.to(`${user._id}`).emit("payment-updated", updated.amount)
-                    return
-                }
+                let current = user.amount
+                let newAmount = current + updated.amount
+                let currentvendor = vendor.amount
+                let newAmountvendor = currentvendor + updated.amount
+                await User.findOneAndUpdate({ _id: updated.vendor }, { amount: newAmountvendor }, { new: true, useFindAndModify: false })
+                await User.findOneAndUpdate({ _id: updated.user }, { amount: newAmount, points: user.points + 1 }, { new: true, useFindAndModify: false })
+                io?.to(`${user._id}`).emit("payment-updated", newAmount)
+                return
             }
 
         }
@@ -118,8 +113,15 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
 export const get_Mpesa_logs = async (req: Request | any, res: Response | any) => {
     try {
         const { page, limit } = req.query;
-
-        let logs = await MpesaLogs.find({ vendor: req.user.userId }).skip((page - 1) * limit)
+        const user: any = await User.findById(req.user.userId)
+        let options = {}
+        if (user.role === "client") {
+            options = { user: req.user.userId }
+        }
+        if (user.role === "admin") {
+            options = { vendor: req.user.userId }
+        }
+        let logs = await MpesaLogs.find(options).skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
         const total = await MpesaLogs.countDocuments();
