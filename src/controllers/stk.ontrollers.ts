@@ -118,8 +118,15 @@ export const makePayment = async (req: Request | any, res: Response | any) => {
 export const get_Mpesa_logs = async (req: Request | any, res: Response | any) => {
     try {
         const { page, limit } = req.query;
-
-        let logs = await MpesaLogs.find({ vendor: req.user.userId }).skip((page - 1) * limit)
+        const user: any = await User.findById(req.user.userId)
+        let options = {}
+        if (user.role === "client") {
+            options = { user: req.user.userId }
+        }
+        if (user.role === "admin") {
+            options = { vendor: req.user.userId }
+        }
+        let logs = await MpesaLogs.find(options).skip((page - 1) * limit)
             .limit(parseInt(limit))
             .sort({ createdAt: -1 });
         const total = await MpesaLogs.countDocuments();
