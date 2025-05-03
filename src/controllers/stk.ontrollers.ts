@@ -141,7 +141,7 @@ export const get_Mpesa_logs = async (req: Request | any, res: Response | any) =>
 }
 export const get_wallet_balance = async (req: Request | any, res: Response | any) => {
     try {
-        let Cash = await CashModel.findOne({ user: req.user.userId }).select("amount")
+        let Cash = await User.findOne({ _id: req.user.userId }).select("amount")
         res.status(200)
             .json(Cash);
         return
