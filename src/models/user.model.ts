@@ -24,8 +24,8 @@ const UserSchema = new mongoose.Schema({
     ref: 'admin_tb'
   },
   ID_No: { type: String, },
-  amount: { type: Number, },
-  points: { type: Number, },
+  amount: { type: Number, default: 0 },
+  points: { type: Number, default: 0 },
   location: {
     lat: { type: Number },
     lng: { type: Number },

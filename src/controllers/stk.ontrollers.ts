@@ -30,13 +30,14 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
             console.log("Ven", vendor)
             const user: any = await User.findOne({ _id: updated.User })
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
-                let current = user.amount
+                let current = user?.amount
                 let newAmount = current + updated.amount
                 let currentvendor = vendor?.amount
                 let newAmountvendor = currentvendor + updated.amount
                 let vendorAmont = await User.findOneAndUpdate({ _id: updated.vendor }, { amount: newAmountvendor }, { new: true, useFindAndModify: false })
                 await User.findOneAndUpdate({ _id: updated.user }, { amount: newAmount, points: user.points + 1 }, { new: true, useFindAndModify: false })
                 console.log("VENDOR", vendorAmont)
+                sendFcmPush(`${user?.fcmToken}`, `${updated.phone_number} Transaction Success!`, `${updated.ResultDesc}`);
                 io?.to(`${user._id}`).emit("payment-updated", newAmount)
                 return
             }
