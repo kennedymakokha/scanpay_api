@@ -33,8 +33,9 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 let newAmount = current + updated.amount
                 let currentvendor = vendor.amount
                 let newAmountvendor = currentvendor + updated.amount
-                await User.findOneAndUpdate({ _id: updated.vendor }, { amount: newAmountvendor }, { new: true, useFindAndModify: false })
+                let vendorAmont = await User.findOneAndUpdate({ _id: updated.vendor }, { amount: newAmountvendor }, { new: true, useFindAndModify: false })
                 await User.findOneAndUpdate({ _id: updated.user }, { amount: newAmount, points: user.points + 1 }, { new: true, useFindAndModify: false })
+                console.log("VENDOR", vendorAmont)
                 io?.to(`${user._id}`).emit("payment-updated", newAmount)
                 return
             }
