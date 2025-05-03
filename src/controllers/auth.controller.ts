@@ -182,7 +182,7 @@ export const login = async (req: Request, res: Response) => {
                 { username: phone_number },
                 { phone_number: phone }
             ]
-        }).select("phone_number username role activated password");
+        }).select("phone_number username role activated password points amount,fcm_token");
 
         if (!userExists) {
             res.status(400).json("User Not Found")
@@ -233,7 +233,7 @@ export const session_Check = async (req: Request, res: Response) => {
 
         const user: any = jwt.verify(token, process.env.JWT_SECRET ? process.env.JWT_SECRET : "your_secret_key");
         res.status(200).json(user);
-   
+
         let io = getSocketIo()
 
         io?.to(user.userId).emit("notification", user)

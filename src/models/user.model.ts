@@ -4,6 +4,7 @@ const UserSchema = new mongoose.Schema({
   phone_number: { type: String, required: true, unique: true },
   username: { type: String, },
   agent: { type: String, },
+  fcmToken: { type: String, },
   activationCode: { type: String, },
   role: {
     type: String,
