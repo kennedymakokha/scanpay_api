@@ -27,7 +27,8 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 MpesaReceiptNumber: req.body.Body?.stkCallback?.CallbackMetadata?.Item[1]?.Value
             }, { new: true, useFindAndModify: false })
             const vendor: any = await User.findOne({ _id: updated.vendor })
-            const user: any = await User.findOne({ _id: updated.User })
+            const user: any = await User.findOne({ _id: updated.user })
+
             if (req.body.Body?.stkCallback?.ResultCode === 0) {
                 let current = user?.amount | 0
                 let newAmount = current + updated?.amount
@@ -36,9 +37,9 @@ export const mpesa_callback = async (req: Request | any, res: Response | any) =>
                 let userPoints: any = user?.points | 0
                 let newpoints = userPoints + 0.01 * parseFloat(updated.amount)
                 await User.findOneAndUpdate({ _id: updated.vendor, role: "admin" }, { amount: newAmountvendor }, { new: true, useFindAndModify: false })
-                let point = await User.findOneAndUpdate({ _id: updated.user, role: "client" }, { amount: newAmount, points: newpoints }, { new: true, useFindAndModify: false })
-                sendFcmPush(`${user?.fcmToken}`, `${updated.phone_number} Transaction Success!`, `${updated.ResultDesc}`);
-                io?.to(`${user._id}`).emit("payment-updated", newAmount)
+                await User.findOneAndUpdate({ _id: updated.user, role: "client" }, { amount: newAmount, points: newpoints }, { new: true, useFindAndModify: false })
+                sendFcmPush(`${vendor?.fcmToken}`, `${updated.phone_number} Transaction Success!`, `${updated.ResultDesc}`);
+                io?.to(`${vendor._id}`).emit("payment-updated", newAmount)
                 return
             }
 
